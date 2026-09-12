@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#14181c">
+<title>Mis Domicilios</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --asphalt: #14181c;
+    --asphalt-2: #1e242b;
+    --line: #f2b705;
+    --coin: #e8622c;
+    --good: #4c9a6a;
+    --paper: #f4efe6;
+    --ink: #23262b;
+    --ink-soft: #6b7078;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 40px;
+  }
+  header{
+    background: var(--asphalt);
+    color: var(--paper);
+    padding: 28px 20px 34px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; bottom:14px;
+    height:4px;
+    background-image: repeating-linear-gradient(to right, var(--line) 0 22px, transparent 22px 38px);
+  }
+  header h1{
+    margin:0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  header p{
+    margin: 4px 0 0;
+    color: #b7bec7;
+    font-size: 0.92rem;
+  }
+  main{
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+  .card{
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-top: -20px;
+    box-shadow: 0 2px 10px rgba(20,24,28,0.08);
+    position: relative;
+    z-index: 2;
+  }
+  .card + .card{ margin-top: 16px; }
+  h2{
+    font-size: 0.95rem;
+    text-transform: none;
+    margin: 0 0 14px;
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .field{
+    margin-bottom: 12px;
+  }
+  .field label{
+    display:block;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+  }
+  .field input{
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1.5px solid #e2ddd2;
+    font-size: 1rem;
+    background: #fbf9f5;
+    color: var(--ink);
+  }
+  .field input:focus{
+    outline: none;
+    border-color: var(--coin);
+  }
+  .row{
+    display:flex;
+    gap: 10px;
+  }
+  .row .field{ flex:1; }
+  button{
+    width:100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-primary{
+    background: var(--asphalt);
+    color: var(--paper);
+  }
+  .btn-primary:active{ background: #0d1013; }
+  .btn-ghost{
+    background: transparent;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    font-weight: 500;
+    font-size: 0.85rem;
+    padding: 6px;
+    width:auto;
+  }
+  .rate-display{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    background: var(--asphalt-2);
+    color: var(--paper);
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+  .rate-display .label{ font-size: 0.78rem; color:#b7bec7; }
+  .rate-display .value{ font-size: 1.15rem; font-weight:700; color: var(--line); }
+
+  .stats{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat{
+    background: #fbf9f5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid #e9e4d8;
+  }
+  .stat .label{ font-size: 0.76rem; color: var(--ink-soft); }
+  .stat .value{ font-size: 1.25rem; font-weight: 700; margin-top:2px; }
+  .stat.profit .value{ color: var(--good); }
+  .stat.cost .value{ color: var(--coin); }
+
+  table{ width:100%; border-collapse: collapse; margin-top: 6px; }
+  th,td{ text-align:left; padding: 9px 4px; font-size: 0.85rem; border-bottom: 1px solid #efe9dc; }
+  th{ color: var(--ink-soft); font-weight:600; font-size:0.75rem; text-transform: uppercase; letter-spacing:0.02em; }
+  td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+  .profit-cell{ color: var(--good); font-weight:600; }
+  .empty{ text-align:center; color: var(--ink-soft); padding: 24px 0; font-size:0.9rem; }
+  .del{
+    background:none; border:none; color:#c0392b; font-size:1.1rem; padding:0 6px; width:auto; cursor:pointer;
+  }
+  .day-group{ margin-top: 14px; }
+  .day-group summary{
+    list-style: none;
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    cursor:pointer;
+    padding: 10px 0;
+    border-top: 1px solid #efe9dc;
+    font-weight:600;
+    font-size: 0.9rem;
+  }
+  .day-group summary::-webkit-details-marker{ display:none; }
+  .day-group summary .amt{ color: var(--good); font-weight:700; }
+  .toast{
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--asphalt);
+    color: var(--paper);
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .toast.show{ opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mis Domicilios</h1>
+  <p>Cuánto ganas de verdad, después de gasolina</p>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>Valor por kilómetro</h2>
+    <div class="rate-display">
+      <span class="label">Valor actual</span>
+      <span class="value" id="rateDisplay">$0 / km</span>
+    </div>
+    <div class="field">
+      <label for="rateInput">Nuevo valor por km (COP)</label>
+      <input type="number" id="rateInput" inputmode="decimal" placeholder="Ej: 350">
+    </div>
+    <button class="btn-primary" id="saveRateBtn">Actualizar valor por km</button>
+    <p style="font-size:0.78rem;color:var(--ink-soft);margin:10px 0 0;">
+      Actualízalo cuando suba o baje la gasolina. Se guarda solo y se usa para todos los domicilios nuevos.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Registrar domicilio</h2>
+    <div class="field">
+      <label for="entryDate">Fecha</label>
+      <input type="date" id="entryDate">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="entryKm">Kilómetros recorridos</label>
+        <input type="number" id="entryKm" inputmode="decimal" placeholder="Ej: 4.5">
+      </div>
+      <div class="field">
+        <label for="entryPay">Te pagaron (COP)</label>
+        <input type="number" id="entryPay" inputmode="decimal" placeholder="Ej: 6000">
+      </div>
+    </div>
+    <button class="btn-primary" id="addEntryBtn">Agregar domicilio</button>
+  </div>
+
+  <div class="card">
+    <h2>Resumen</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Hoy · bruto</div>
+        <div class="value" id="todayGross">$0</div>
+      </div>
+      <div class="stat cost">
+        <div class="label">Hoy · gasolina</div>
+        <div class="value" id="todayCost">$0</div>
+      </div>
+      <div class="stat profit">
+        <div class="label">Hoy · ganancia real</div>
+        <div class="value" id="todayProfit">$0</div>
+      </div>
+      <div class="stat profit">
+        <div class="label">Esta semana · ganancia real</div>
+        <div class="value" id="weekProfit">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Historial</h2>
+    <div id="history"></div>
+    <button class="btn-ghost" id="clearBtn">Borrar todo el historial</button>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
