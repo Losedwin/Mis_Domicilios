@@ -118,15 +118,18 @@ function renderHistory() {
       const table = document.createElement("table");
       table.innerHTML = `
         <thead>
-          <tr><th>Km</th><th>Te pagaron</th><th>Gasolina</th><th>Ganancia</th><th></th></tr>
+          <tr><th>Tipo</th><th>Km</th><th>Te pagaron</th><th>Gasolina</th><th>Ganancia</th><th></th></tr>
         </thead>
         <tbody></tbody>
       `;
       const tbody = table.querySelector("tbody");
       dayEntries.forEach((e) => {
         const { cost, profit } = computeEntry(e);
+        const type = e.type || "domicilio";
+        const typeLabel = type === "carrera" ? "Carrera" : "Domicilio";
         const tr = document.createElement("tr");
         tr.innerHTML = `
+          <td><span class="tag ${type}">${typeLabel}</span></td>
           <td class="num">${e.km}</td>
           <td class="num">${money(e.pay)}</td>
           <td class="num">${money(cost)}</td>
@@ -170,16 +173,36 @@ document.getElementById("saveRateBtn").addEventListener("click", () => {
   showToast("Valor por km actualizado");
 });
 
+let currentType = "domicilio";
+
+const TYPE_LABELS = {
+  domicilio: { name: "Domicilio", pickup: "Km hasta el punto de recogida", drop: "Km hasta el destino" },
+  carrera: { name: "Carrera", pickup: "Km hasta donde recoges al pasajero", drop: "Km hasta el destino" },
+};
+
+document.querySelectorAll(".type-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    currentType = btn.getAttribute("data-type");
+    document.querySelectorAll(".type-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("labelKmPickup").textContent = TYPE_LABELS[currentType].pickup;
+    document.getElementById("labelKmDrop").textContent = TYPE_LABELS[currentType].drop;
+  });
+});
+
 document.getElementById("addEntryBtn").addEventListener("click", () => {
   const dateEl = document.getElementById("entryDate");
-  const kmEl = document.getElementById("entryKm");
+  const kmPickupEl = document.getElementById("entryKmPickup");
+  const kmDropEl = document.getElementById("entryKmDrop");
   const payEl = document.getElementById("entryPay");
 
   const date = dateEl.value || todayISO();
-  const km = parseFloat(kmEl.value);
+  const kmPickup = parseFloat(kmPickupEl.value) || 0;
+  const kmDrop = parseFloat(kmDropEl.value) || 0;
+  const km = kmPickup + kmDrop;
   const pay = parseFloat(payEl.value);
 
-  if (isNaN(km) || km < 0 || isNaN(pay) || pay < 0) {
+  if (km <= 0 || isNaN(pay) || pay < 0) {
     showToast("Revisa los kilómetros y el pago");
     return;
   }
@@ -188,16 +211,20 @@ document.getElementById("addEntryBtn").addEventListener("click", () => {
   entries.push({
     id: Date.now(),
     date,
+    type: currentType,
+    kmPickup,
+    kmDrop,
     km,
     pay,
     rate: getRate(),
   });
   setEntries(entries);
 
-  kmEl.value = "";
+  kmPickupEl.value = "";
+  kmDropEl.value = "";
   payEl.value = "";
   renderAll();
-  showToast("Domicilio agregado");
+  showToast(TYPE_LABELS[currentType].name + " agregado" + (currentType === "domicilio" ? "" : "a"));
 });
 
 document.getElementById("clearBtn").addEventListener("click", () => {
