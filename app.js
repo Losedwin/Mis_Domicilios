@@ -59,38 +59,57 @@ function computeEntry(e) {
   return { cost, profit };
 }
 
+// --- filtro de fechas del resumen/historial ---
+let filterFrom = todayISO();
+let filterTo = todayISO();
+
 function renderStats() {
   const entries = getEntries();
-  const today = todayISO();
-  const weekStart = startOfWeek(today);
+  const from = filterFrom || "0000-01-01";
+  const to = filterTo || "9999-12-31";
 
-  let todayGross = 0, todayCost = 0, todayProfit = 0, weekProfit = 0;
+  let gross = 0, cost = 0, profit = 0, countDomicilio = 0, countCarrera = 0;
 
   entries.forEach((e) => {
-    const { cost, profit } = computeEntry(e);
-    if (e.date === today) {
-      todayGross += e.pay;
-      todayCost += cost;
-      todayProfit += profit;
-    }
-    if (e.date >= weekStart && e.date <= today) {
-      weekProfit += profit;
+    if (e.date >= from && e.date <= to) {
+      const c = computeEntry(e);
+      gross += e.pay;
+      cost += c.cost;
+      profit += c.profit;
+      if ((e.type || "domicilio") === "carrera") countCarrera++;
+      else countDomicilio++;
     }
   });
 
-  document.getElementById("todayGross").textContent = money(todayGross);
-  document.getElementById("todayCost").textContent = money(todayCost);
-  document.getElementById("todayProfit").textContent = money(todayProfit);
-  document.getElementById("weekProfit").textContent = money(weekProfit);
+  document.getElementById("sumGross").textContent = money(gross);
+  document.getElementById("sumCost").textContent = money(cost);
+  document.getElementById("sumProfit").textContent = money(profit);
+  document.getElementById("sumCount").textContent = countDomicilio + countCarrera;
+  document.getElementById("sumCountBreakdown").textContent =
+    countDomicilio + countCarrera > 0 ? `📦 ${countDomicilio} · 🧍 ${countCarrera}` : "";
+}
+
+function updateRangeLabel() {
+  const label = filterFrom === filterTo
+    ? (filterFrom === todayISO() ? "Resumen de hoy" : `Resumen del ${formatDateLabel(filterFrom)}`)
+    : `Resumen del ${formatDateLabel(filterFrom)} al ${formatDateLabel(filterTo)}`;
+  document.getElementById("rangeLabel").textContent = label;
+  document.getElementById("historyRangeLabel").textContent =
+    filterFrom === filterTo && filterFrom === todayISO() ? "" : `(${label.replace("Resumen ", "")})`;
 }
 
 function renderHistory() {
-  const entries = getEntries().slice().sort((a, b) => (a.date < b.date ? 1 : -1) || (b.id - a.id));
+  const from = filterFrom || "0000-01-01";
+  const to = filterTo || "9999-12-31";
+  const entries = getEntries()
+    .filter((e) => e.date >= from && e.date <= to)
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1) || (b.id - a.id));
   const container = document.getElementById("history");
   container.innerHTML = "";
 
   if (entries.length === 0) {
-    container.innerHTML = '<div class="empty">Todavía no has registrado domicilios.</div>';
+    container.innerHTML = '<div class="empty">No hay domicilios registrados en este rango.</div>';
     return;
   }
 
@@ -155,6 +174,7 @@ function renderHistory() {
 
 function renderAll() {
   renderRate();
+  updateRangeLabel();
   renderStats();
   renderHistory();
 }
@@ -227,6 +247,65 @@ document.getElementById("addEntryBtn").addEventListener("click", () => {
   showToast(TYPE_LABELS[currentType].name + " agregado" + (currentType === "domicilio" ? "" : "a"));
 });
 
+// --- filtros del resumen ---
+function setQuickActive(range) {
+  document.querySelectorAll(".qf-btn").forEach((b) => b.classList.remove("active"));
+  const btn = document.querySelector(`.qf-btn[data-range="${range}"]`);
+  if (btn) btn.classList.add("active");
+}
+
+document.querySelectorAll(".qf-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const range = btn.getAttribute("data-range");
+    const today = todayISO();
+    if (range === "today") {
+      filterFrom = today;
+      filterTo = today;
+    } else if (range === "yesterday") {
+      const d = new Date(today + "T00:00:00");
+      d.setDate(d.getDate() - 1);
+      const y = d.toISOString().slice(0, 10);
+      filterFrom = y;
+      filterTo = y;
+    } else if (range === "week") {
+      filterFrom = startOfWeek(today);
+      filterTo = today;
+    } else if (range === "all") {
+      const entries = getEntries();
+      filterFrom = entries.length ? entries.reduce((min, e) => (e.date < min ? e.date : min), entries[0].date) : today;
+      filterTo = today;
+    }
+    document.getElementById("filterFrom").value = filterFrom;
+    document.getElementById("filterTo").value = filterTo;
+    setQuickActive(range);
+    renderAll();
+  });
+});
+
+document.getElementById("filterFrom").addEventListener("change", (e) => {
+  filterFrom = e.target.value;
+  if (filterTo < filterFrom) filterTo = filterFrom;
+  document.getElementById("filterTo").value = filterTo;
+  setQuickActive(null);
+  renderAll();
+});
+document.getElementById("filterTo").addEventListener("change", (e) => {
+  filterTo = e.target.value;
+  if (filterFrom > filterTo) filterFrom = filterTo;
+  document.getElementById("filterFrom").value = filterFrom;
+  setQuickActive(null);
+  renderAll();
+});
+
+// --- botón "Hoy" y aviso de fecha pasada en el formulario de registro ---
+document.getElementById("todayBtn").addEventListener("click", () => {
+  document.getElementById("entryDate").value = todayISO();
+  document.getElementById("dateNote").style.display = "none";
+});
+document.getElementById("entryDate").addEventListener("change", (e) => {
+  document.getElementById("dateNote").style.display = e.target.value < todayISO() ? "block" : "none";
+});
+
 document.getElementById("clearBtn").addEventListener("click", () => {
   if (confirm("¿Seguro que quieres borrar todo el historial? Esto no se puede deshacer.")) {
     setEntries([]);
@@ -237,11 +316,19 @@ document.getElementById("clearBtn").addEventListener("click", () => {
 
 // --- inicio ---
 document.getElementById("entryDate").value = todayISO();
+document.getElementById("filterFrom").value = filterFrom;
+document.getElementById("filterTo").value = filterTo;
 renderAll();
 
-// registrar service worker para que funcione offline
+// Mientras estamos en fase de pruebas, desactivamos el service worker:
+// esto limpia cualquier versión vieja guardada en caché en el celular
+// y evita que sirva código desactualizado mientras seguimos cambiando cosas.
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((reg) => reg.unregister());
   });
 }
+if (window.caches) {
+  caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+}
+
