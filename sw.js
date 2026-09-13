@@ -1,4 +1,4 @@
-const CACHE_NAME = "domi-cache-v1";
+const CACHE_NAME = "domi-cache-v2";
 const FILES = ["./index.html", "./app.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
