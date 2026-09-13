@@ -157,6 +157,40 @@
   }
   .tag.domicilio{ background:#fdecd2; color:#a15c00; }
   .tag.carrera{ background:#e4ecf7; color:#2a4d8f; }
+  .quick-filters{
+    display:flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .qf-btn{
+    width:auto;
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 20px;
+    border: 1.5px solid #e2ddd2;
+    background: #fbf9f5;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .qf-btn.active{
+    border-color: var(--coin);
+    background: var(--coin);
+    color: #fff;
+  }
+  .range-label{
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin: 2px 0 12px;
+    font-weight: 600;
+  }
+  .stat .sublabel{
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
   .rate-display{
     display:flex;
     align-items:baseline;
@@ -261,8 +295,14 @@
       </div>
     </div>
     <div class="field">
-      <label for="entryDate">Fecha</label>
-      <input type="date" id="entryDate">
+      <label for="entryDate">Fecha del viaje</label>
+      <div class="row" style="align-items:flex-end;">
+        <input type="date" id="entryDate" style="flex:1;">
+        <button type="button" class="btn-ghost" id="todayBtn" style="width:auto;padding:11px 10px;">Hoy</button>
+      </div>
+      <p id="dateNote" style="font-size:0.78rem;color:var(--coin);margin:6px 0 0;display:none;">
+        ⚠️ Vas a registrar este viaje con fecha pasada.
+      </p>
     </div>
     <div class="row">
       <div class="field">
@@ -283,28 +323,46 @@
 
   <div class="card">
     <h2>Resumen</h2>
+    <div class="quick-filters" id="quickFilters">
+      <button type="button" class="qf-btn active" data-range="today">Hoy</button>
+      <button type="button" class="qf-btn" data-range="yesterday">Ayer</button>
+      <button type="button" class="qf-btn" data-range="week">Esta semana</button>
+      <button type="button" class="qf-btn" data-range="all">Todo</button>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="filterFrom">Desde</label>
+        <input type="date" id="filterFrom">
+      </div>
+      <div class="field">
+        <label for="filterTo">Hasta</label>
+        <input type="date" id="filterTo">
+      </div>
+    </div>
+    <div class="range-label" id="rangeLabel">Resumen de hoy</div>
     <div class="stats">
       <div class="stat">
-        <div class="label">Hoy · bruto</div>
-        <div class="value" id="todayGross">$0</div>
+        <div class="label">Bruto</div>
+        <div class="value" id="sumGross">$0</div>
       </div>
       <div class="stat cost">
-        <div class="label">Hoy · gasolina</div>
-        <div class="value" id="todayCost">$0</div>
+        <div class="label">Gasolina</div>
+        <div class="value" id="sumCost">$0</div>
       </div>
       <div class="stat profit">
-        <div class="label">Hoy · ganancia real</div>
-        <div class="value" id="todayProfit">$0</div>
+        <div class="label">Ganancia real</div>
+        <div class="value" id="sumProfit">$0</div>
       </div>
-      <div class="stat profit">
-        <div class="label">Esta semana · ganancia real</div>
-        <div class="value" id="weekProfit">$0</div>
+      <div class="stat">
+        <div class="label">Viajes</div>
+        <div class="value" id="sumCount">0</div>
+        <div class="sublabel" id="sumCountBreakdown"></div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <h2>Historial</h2>
+    <h2>Historial <span id="historyRangeLabel" style="font-weight:400;color:var(--ink-soft);"></span></h2>
     <div id="history"></div>
     <button class="btn-ghost" id="clearBtn">Borrar todo el historial</button>
   </div>
@@ -316,3 +374,4 @@
 <script src="app.js"></script>
 </body>
 </html>
+
